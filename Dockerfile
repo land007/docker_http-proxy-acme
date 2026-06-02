@@ -28,7 +28,7 @@ RUN echo 'mkdir -p /node_/cert /node_/backups' >> /task.sh
 RUN echo '[ -n "${DOMAIN_NAME}" ] && [ -f "/root/.acme.sh/${DOMAIN_NAME}/${DOMAIN_NAME}.key" ] && /root/.acme.sh/acme.sh --install-cert -d ${DOMAIN_NAME} --key-file /node_/cert/${DOMAIN_NAME}_key.key --fullchain-file /node_/cert/${DOMAIN_NAME}_chain.crt || true' >> /task.sh
 # proxy 与 admin-api 都从 /node_ 跑（沿用 base 的 start-simple.sh），
 # 让 supervisor 同时监视证书/密钥变化，ACME 网页签发后自动重载
-RUN sed -i 's/node_modules/node_modules -e node,js,key,crt/g' /node_/start-simple.sh
+RUN sed -i 's#supervisor -w /node_/ -i node_modules#supervisor -w /node_/ -i node_modules -e node,js,key,crt#' /node_/start-simple.sh
 #crontab -l
 #service cron status
 
