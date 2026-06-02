@@ -1,0 +1,80 @@
+name: Build and Push Docker Image
+
+# Builds the ACME variant. Triggers:
+#  - pushing a version tag (e.g. v1.0.0)
+#  - repository_dispatch "base-updated" sent by the base repo after it publishes
+#  - manual run (optionally pinning the base image version)
+on:
+  push:
+    tags:
+      - "v*"
+  repository_dispatch:
+    types: [base-updated]
+  workflow_dispatch:
+    inputs:
+      base_version:
+        description: "Base image tag to build on (land007/http-proxy:<tag>)"
+        default: "latest"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve base image tag
+        id: base
+        run: |
+          case "${{ github.event_name }}" in
+            repository_dispatch) echo "tag=${{ github.event.client_payload.version }}" >> "$GITHUB_OUTPUT" ;;
+            workflow_dispatch)   echo "tag=${{ github.event.inputs.base_version }}" >> "$GITHUB_OUTPUT" ;;
+            *)                   echo "tag=latest" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Docker metadata (tags & labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/http-proxy-acme
+            ghcr.io/${{ github.repository_owner }}/http-proxy-acme
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+            type=raw,value=${{ github.event.client_payload.version }},enable=${{ github.event_name == 'repository_dispatch' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            BASE_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/http-proxy:${{ steps.base.outputs.tag }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

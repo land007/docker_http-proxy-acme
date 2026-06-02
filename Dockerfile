@@ -1,4 +1,6 @@
-FROM land007/http-proxy:latest
+# Base image is overridable so CI can build on a specific freshly-pushed base version
+ARG BASE_IMAGE=land007/http-proxy:latest
+FROM ${BASE_IMAGE}
 
 MAINTAINER Jia Yiqiu <yiqiujia@hotmail.com>
 
