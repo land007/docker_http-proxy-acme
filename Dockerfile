@@ -7,10 +7,11 @@ RUN echo $(date "+%Y-%m-%d_%H:%M:%S") >> /.image_times && \
 	echo "land007/http-proxy-acme" >> /.image_names && \
 	echo "land007/http-proxy-acme" > /.image_name
 
-RUN apt-get --allow-releaseinfo-change update && apt-get install -y cron
+RUN apt-get --allow-releaseinfo-change update && apt-get install -y cron rsync
 #RUN apt-get install -y initscripts
-#RUN curl https://get.acme.sh | sh -s email=land_007@163.com
-RUN cd / && curl https://gitcode.net/cert/cn-acme.sh/-/raw/master/install.sh?inline=false | sh -s email=land_007@163.com
+##https://github.com/acmesh-official/acme.sh
+#RUN cd / && curl https://gitcode.net/cert/cn-acme.sh/-/raw/master/install.sh?inline=false | sh -s email=land_007@163.com
+RUN cd / && curl https://get.acme.sh | sh -s email=land_007@163.com
 
 ENV DOMAIN_NAME=wrt.qhkly.com
 ENV ACME_URL https://acme.freessl.cn/v2/DV90/directory/ICOAy3RLUDtrGPT
@@ -20,12 +21,20 @@ ENV ACME_URL https://acme.freessl.cn/v2/DV90/directory/ICOAy3RLUDtrGPT
 #--reloadcmd "service nginx force-reload" \
 #--dns dns_dp --server ${ACME_URL}' >> /task.sh
 RUN echo 'service cron start' >> /task.sh
-RUN echo '/root/.acme.sh/acme.sh --issue -d ${DOMAIN_NAME} --key-file /node/cert/${DOMAIN_NAME}_key.key --fullchain-file /node/cert/${DOMAIN_NAME}_chain.crt --dns dns_dp --server ${ACME_URL} || true' >> /task.sh
+
+RUN echo 'mkdir -p /node_/cert /node_/backups' >> /task.sh
+RUN echo '[ -n "${DOMAIN_NAME}" ] && [ -f "/root/.acme.sh/${DOMAIN_NAME}/${DOMAIN_NAME}.key" ] && /root/.acme.sh/acme.sh --install-cert -d ${DOMAIN_NAME} --key-file /node_/cert/${DOMAIN_NAME}_key.key --fullchain-file /node_/cert/${DOMAIN_NAME}_chain.crt || true' >> /task.sh
 RUN sed -i 's/node_modules/node_modules -e node,js,key,crt/g' /node_/start.sh
 #crontab -l
 #service cron status
 
+VOLUME ["/root/.acme.sh", "/node_/cert", "/node_/backups"]
+
 CMD /check.sh /node && /task.sh && /node/start.sh
 
+#cp /root/.acme.sh/docx.qhkly.com/docx.qhkly.com.cer /node/cert/docx.qhkly.com_chain.crt
+#cp /root/.acme.sh/docx.qhkly.com/docx.qhkly.com.key /node/cert/docx.qhkly.com_key.key
+#/root/.acme.sh/acme.sh --install-cert -d docx.qhkly.com --key-file /node/cert/docx.qhkly.com_key.key --fullchain-file /node/cert/docx.qhkly.com_chain.crt
+
 #docker build -t land007/http-proxy-acme:latest .
-#> docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 -t land007/http-proxy-acme --push .
+#> docker buildx build --platform linux/amd64,linux/arm64/v8,linux/arm/v7 -t land007/http-proxy-acme:new --push .

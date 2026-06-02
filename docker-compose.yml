@@ -1,0 +1,49 @@
+version: "2.1"
+networks:
+  internal_network:
+  macnet:
+    driver: macvlan
+    driver_opts:
+      parent: eth0
+    ipam:
+      config:
+        - subnet: 192.168.1.0/24
+          gateway: 192.168.1.1
+  default:
+    driver: bridge
+services:
+  theia_http-proxy:
+    restart: always
+    networks:
+      - internal_network
+    links:
+      - theia
+    image: land007/http-proxy-acme:latest
+    container_name: theia_http-proxy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "300k"
+        max-file: "3"
+    environment:
+      - "DOMAIN_NAME=wrt.qhkly.com"
+      - "ACME_URL=https://acme.freessl.cn/v2/DV90/directory/xgo4olnh6fn6s92pmvww"
+      - "ADMIN_PORT=8444"
+      - "ADMIN_HTTP_MODE=true"
+    volumes:
+      - ./users_list.json:/node_/users_list.json
+      - ./proxy-config.json:/node_/proxy-config.json
+      - ./admin_users.json:/node_/admin_users.json
+      - ./backups:/node_/backups
+      - ./cert:/node_/cert
+      - ./acme:/root/.acme.sh
+    expose:
+      - "20022"
+      - "8444"
+      - "443"
+      - "80"
+    ports:
+#      - "5052:20022"
+      - "5050:443"
+      - "5053:8444"
+#      - "5051:80"

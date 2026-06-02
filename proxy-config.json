@@ -1,0 +1,39 @@
+{
+  "version": "1.0",
+  "lastModified": "2026-06-02T00:00:00.000Z",
+  "settings": {
+    "maxSession": 1,
+    "defaultAuth": {
+      "enabled": true,
+      "username": "land007",
+      "password": "c853d27731e22fd24202d2c3faafbcfd"
+    }
+  },
+  "httpProxyRules": [
+    {
+      "id": "http-rule-theia",
+      "enabled": true,
+      "protocol": "https:",
+      "domain": "",
+      "path": "/",
+      "targetHost": "theia",
+      "targetPort": 3000,
+      "pretendMode": false,
+      "priority": 1
+    }
+  ],
+  "wsProxyRules": [
+    {
+      "id": "ws-rule-theia",
+      "enabled": true,
+      "protocol": "wss:",
+      "domain": "",
+      "path": "/",
+      "targetHost": "theia",
+      "targetPort": 3000,
+      "pretendMode": false,
+      "priority": 1
+    }
+  ],
+  "sslCertificates": []
+}
