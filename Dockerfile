@@ -24,13 +24,16 @@ RUN echo 'service cron start' >> /task.sh
 
 RUN echo 'mkdir -p /node_/cert /node_/backups' >> /task.sh
 RUN echo '[ -n "${DOMAIN_NAME}" ] && [ -f "/root/.acme.sh/${DOMAIN_NAME}/${DOMAIN_NAME}.key" ] && /root/.acme.sh/acme.sh --install-cert -d ${DOMAIN_NAME} --key-file /node_/cert/${DOMAIN_NAME}_key.key --fullchain-file /node_/cert/${DOMAIN_NAME}_chain.crt || true' >> /task.sh
-RUN sed -i 's/node_modules/node_modules -e node,js,key,crt/g' /node_/start.sh
+# proxy 与 admin-api 都从 /node_ 跑（沿用 base 的 start-simple.sh），
+# 让 supervisor 同时监视证书/密钥变化，ACME 网页签发后自动重载
+RUN sed -i 's/node_modules/node_modules -e node,js,key,crt/g' /node_/start-simple.sh
 #crontab -l
 #service cron status
 
 VOLUME ["/root/.acme.sh", "/node_/cert", "/node_/backups"]
 
-CMD /check.sh /node && /task.sh && /node/start.sh
+# 先跑 ACME 任务(cron + 已有证书安装)，再以 /node_ 为根启动 admin-api + proxy
+CMD ["/bin/bash", "-c", "bash /task.sh && /node_/start-simple.sh"]
 
 #cp /root/.acme.sh/docx.qhkly.com/docx.qhkly.com.cer /node/cert/docx.qhkly.com_chain.crt
 #cp /root/.acme.sh/docx.qhkly.com/docx.qhkly.com.key /node/cert/docx.qhkly.com_key.key
