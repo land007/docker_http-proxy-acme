@@ -32,6 +32,8 @@ RUN sed -i 's#supervisor -w /node_/ -i node_modules#supervisor -w /node_/ -i nod
 #crontab -l
 #service cron status
 
+ADD web-ui /node_/web-ui
+
 VOLUME ["/root/.acme.sh", "/node_/cert", "/node_/backups"]
 
 # 先跑 ACME 任务(cron + 已有证书安装)，再以 /node_ 为根启动 admin-api + proxy
