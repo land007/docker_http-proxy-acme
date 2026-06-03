@@ -14,6 +14,7 @@ RUN apt-get --allow-releaseinfo-change update && apt-get install -y cron rsync
 ##https://github.com/acmesh-official/acme.sh
 #RUN cd / && curl https://gitcode.net/cert/cn-acme.sh/-/raw/master/install.sh?inline=false | sh -s email=land_007@163.com
 RUN cd / && curl https://get.acme.sh | sh -s email=land_007@163.com
+RUN mkdir -p /node_/seed && cp -a /root/.acme.sh /node_/seed/acme.sh
 
 ENV DATA_DIR=/node_/data
 #RUN echo 'acme.sh --issue -d ${DOMAIN_NAME} \
@@ -24,6 +25,7 @@ ENV DATA_DIR=/node_/data
 RUN echo 'service cron start' >> /task.sh
 
 RUN echo ': "${DATA_DIR:=/node_/data}"' >> /task.sh
+RUN echo 'if [ ! -f /root/.acme.sh/acme.sh ] && [ -d /node_/seed/acme.sh ]; then cp -a /node_/seed/acme.sh/. /root/.acme.sh/; fi' >> /task.sh
 RUN echo 'mkdir -p "${DATA_DIR}/cert" "${DATA_DIR}/backups"' >> /task.sh
 RUN echo '[ -n "${DOMAIN_NAME}" ] && [ -f "/root/.acme.sh/${DOMAIN_NAME}/${DOMAIN_NAME}.key" ] && /root/.acme.sh/acme.sh --install-cert -d ${DOMAIN_NAME} --key-file "${DATA_DIR}/cert/${DOMAIN_NAME}_key.key" --fullchain-file "${DATA_DIR}/cert/${DOMAIN_NAME}_chain.crt" || true' >> /task.sh
 # proxy 与 admin-api 都从 /node_ 跑（沿用 base 的 start-simple.sh），
