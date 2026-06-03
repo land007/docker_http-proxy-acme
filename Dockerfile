@@ -15,8 +15,7 @@ RUN apt-get --allow-releaseinfo-change update && apt-get install -y cron rsync
 #RUN cd / && curl https://gitcode.net/cert/cn-acme.sh/-/raw/master/install.sh?inline=false | sh -s email=land_007@163.com
 RUN cd / && curl https://get.acme.sh | sh -s email=land_007@163.com
 
-ENV DOMAIN_NAME=wrt.qhkly.com
-ENV ACME_URL https://acme.freessl.cn/v2/DV90/directory/ICOAy3RLUDtrGPT
+ENV DATA_DIR=/node_/data
 #RUN echo 'acme.sh --issue -d ${DOMAIN_NAME} \
 #--key-file /node/cert/${DOMAIN_NAME}_key.key \
 #--fullchain-file /node/cert/${DOMAIN_NAME}_chain.crt \
@@ -24,17 +23,16 @@ ENV ACME_URL https://acme.freessl.cn/v2/DV90/directory/ICOAy3RLUDtrGPT
 #--dns dns_dp --server ${ACME_URL}' >> /task.sh
 RUN echo 'service cron start' >> /task.sh
 
-RUN echo 'mkdir -p /node_/cert /node_/backups' >> /task.sh
-RUN echo '[ -n "${DOMAIN_NAME}" ] && [ -f "/root/.acme.sh/${DOMAIN_NAME}/${DOMAIN_NAME}.key" ] && /root/.acme.sh/acme.sh --install-cert -d ${DOMAIN_NAME} --key-file /node_/cert/${DOMAIN_NAME}_key.key --fullchain-file /node_/cert/${DOMAIN_NAME}_chain.crt || true' >> /task.sh
+RUN echo ': "${DATA_DIR:=/node_/data}"' >> /task.sh
+RUN echo 'mkdir -p "${DATA_DIR}/cert" "${DATA_DIR}/backups"' >> /task.sh
+RUN echo '[ -n "${DOMAIN_NAME}" ] && [ -f "/root/.acme.sh/${DOMAIN_NAME}/${DOMAIN_NAME}.key" ] && /root/.acme.sh/acme.sh --install-cert -d ${DOMAIN_NAME} --key-file "${DATA_DIR}/cert/${DOMAIN_NAME}_key.key" --fullchain-file "${DATA_DIR}/cert/${DOMAIN_NAME}_chain.crt" || true' >> /task.sh
 # proxy 与 admin-api 都从 /node_ 跑（沿用 base 的 start-simple.sh），
 # 让 supervisor 同时监视证书/密钥变化，ACME 网页签发后自动重载
 RUN sed -i 's#supervisor -w /node_/ -i node_modules#supervisor -w /node_/ -i node_modules -e node,js,key,crt#' /node_/start-simple.sh
 #crontab -l
 #service cron status
 
-ADD web-ui /node_/web-ui
-
-VOLUME ["/root/.acme.sh", "/node_/cert", "/node_/backups"]
+VOLUME ["/root/.acme.sh", "/node_/data"]
 
 # 先跑 ACME 任务(cron + 已有证书安装)，再以 /node_ 为根启动 admin-api + proxy
 CMD ["/bin/bash", "-c", "bash /task.sh && /node_/start-simple.sh"]

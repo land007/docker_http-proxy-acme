@@ -31,11 +31,7 @@ services:
       - "ADMIN_PORT=8444"
       - "ADMIN_HTTP_MODE=true"
     volumes:
-      - ./users_list.json:/node_/users_list.json
-      - ./proxy-config.json:/node_/proxy-config.json
-      - ./admin_users.json:/node_/admin_users.json
-      - ./backups:/node_/backups
-      - ./cert:/node_/cert
+      - ./data:/node_/data
       - ./acme:/root/.acme.sh
     expose:
       - "20022"
