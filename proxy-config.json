@@ -19,6 +19,7 @@
       "targetHost": "theia",
       "targetPort": 3000,
       "pretendMode": false,
+      "redirectToHttps": false,
       "priority": 1
     }
   ],
